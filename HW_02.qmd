@@ -22,15 +22,19 @@ For this assignment, you will practice downloadings, cleaning, and analyzing dat
 
 __1. Import the NRI data. Ensure that the [FIPS code](https://en.wikipedia.org/wiki/Federal_Information_Processing_Standard_state_code) variable ('STCOFIPS') is correctly identified as a string / character variable. Otherwise, the leading zeros will be removed.__
 
-```
-# your code here
+```{python}
+import pandas as pd
+dfNRI = pd.read_csv('Data/Raw/NRI_Table_Counties.csv', dtype={"STCOFIPS": str})
+print(csvNRI)
 ```
 
 __2. Subset the NRI data to include only the 5-digit state/county FIPS code and all colums ending with '\_AFREQ' and '\_RISKR'. Each of these columns represents a different hazard type.__
 
+```{python}
+dfNRI = csvNRI.filter(regex='STCOFIPS|_AFREQ$|_RISKR$')
+print(dfNRI)
 ```
-# your code here
-```
+
 __3. Create a table / dataframe that, for each hazard type, shows the number of missing values in the '\_AFREQ' and '\_RISKR' columns.__
 ```
 # your code here
