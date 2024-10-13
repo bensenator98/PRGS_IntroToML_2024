@@ -40,11 +40,20 @@ __3. Create a table / dataframe that, for each hazard type, shows the number of 
 ```{python}
 # First reduce down to the AFREQ and RISKR cols.
 dfNRISubset = dfNRI.filter(regex='_AFREQ$|_RISKR$')
-print(dfNRISubset)
 
 # Looks good - we can calculate the number of missing rows in each col.
 vectorNFIMissing = dfNRISubset.isnull().sum()
-print(vectorNFIMissing)
+
+# And now create dataframe from vectorNFIMissing.
+dfMissing = vectorNFIMissing.reset_index()
+dfMissing.columns = ['Column', 'MissingCount']
+
+# Find the hazard types and put them into a new col.
+dfMissing['HazardType'] = dfMissing['Column'].str.extract(r'^(.*?)(?:_AFREQ|_RISKR)$')[0]
+
+# Group, and sum the missing counts.
+dfMissingCrossTabs = dfMissing.groupby('HazardType').sum()
+print(dfMissingCrossTabs)
 ```
 
 __4. Create a new column in the original data table indicating whether or not 'AVLN_AFREQ' is missing or observed. Show the cross-tabulation of the 'AVLN_AFREQ' missingness and 'AVLN_RISKR' columns (including missing values). What do you observe?__
