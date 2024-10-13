@@ -25,20 +25,28 @@ __1. Import the NRI data. Ensure that the [FIPS code](https://en.wikipedia.org/w
 ```{python}
 import pandas as pd
 dfNRI = pd.read_csv('Data/Raw/NRI_Table_Counties.csv', dtype={"STCOFIPS": str})
-print(csvNRI)
+print(dfNRI)
 ```
 
 __2. Subset the NRI data to include only the 5-digit state/county FIPS code and all colums ending with '\_AFREQ' and '\_RISKR'. Each of these columns represents a different hazard type.__
 
 ```{python}
-dfNRI = csvNRI.filter(regex='STCOFIPS|_AFREQ$|_RISKR$')
+dfNRI = dfNRI.filter(regex='STCOFIPS|_AFREQ$|_RISKR$')
 print(dfNRI)
 ```
 
 __3. Create a table / dataframe that, for each hazard type, shows the number of missing values in the '\_AFREQ' and '\_RISKR' columns.__
+
+```{python}
+# First reduce down to the AFREQ and RISKR cols.
+dfNRISubset = dfNRI.filter(regex='_AFREQ$|_RISKR$')
+print(dfNRISubset)
+
+# Looks good - we can calculate the number of missing rows in each col.
+vectorNFIMissing = dfNRISubset.isnull().sum()
+print(vectorNFIMissing)
 ```
-# your code here
-```
+
 __4. Create a new column in the original data table indicating whether or not 'AVLN_AFREQ' is missing or observed. Show the cross-tabulation of the 'AVLN_AFREQ' missingness and 'AVLN_RISKR' columns (including missing values). What do you observe?__
 ```
 # your code here
