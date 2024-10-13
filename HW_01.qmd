@@ -13,4 +13,4 @@ from datetime import date
 x = date.today()
 ```
 
-Today's date is: `{python} print(x)`.
+Today's date is: `{python} str(x)`.
