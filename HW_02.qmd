@@ -55,23 +55,41 @@ print(dfNRIMissingWide)
 ```
 
 __4. Create a new column in the original data table indicating whether or not 'AVLN_AFREQ' is missing or observed. Show the cross-tabulation of the 'AVLN_AFREQ' missingness and 'AVLN_RISKR' columns (including missing values). What do you observe?__
-```
-# your code here
-```
-__5. Assuming that a risk that is "not applicable" to a county has an annualized frequency of 0, impute the relevant missing values in the '\_AFREQ' columns with 0.__
-```
-# your code here
+```{python}
+# Let's note that we have already done the output of this in part 3, but we will also create the requested missing indicator here.
+dfNRI['AVLN_AFREQ_Missing'] = dfNRI['AVLN_AFREQ'].isnull()
+tblAVLNAFREQMissingByAVLNRISKR = pd.crosstab(dfNRI['AVLN_AFREQ_Missing'], dfNRI['AVLN_RISKR'], dropna=False)
+print(tblAVLNAFREQMissingByAVLNRISKR)
 ```
 
+We notice that the vast majority of the missing values for AVLN_AFREQ are conditional on the AVLN_RISKR variable being 'Not Applicable'.
+
+__5. Assuming that a risk that is "not applicable" to a county has an annualized frequency of 0, impute the relevant missing values in the '\_AFREQ' columns with 0.__
+
+```{python}
+dfNRI[dfNRI.columns[dfNRI.columns.str.endswith('_AFREQ')]] = dfNRI.filter(regex='_AFREQ$').fillna(0)
+```
 
 ## Task 2 - SVI Data Cleaning
 
 __1. Import the SVI data. Ensure that the FIPS code is correctly identified as a string / character variable. Otherwise, the leading zeros will be removed.__
 __1. Subset the SVI data to include only the following columns:__
 `ST, STATE, ST_ABBR, STCNTY, COUNTY, FIPS, LOCATION, AREA_SQMI, E_TOTPOP, EP_POV150, EP_UNEMP, EP_HBURD, EP_NOHSDP, EP_UNINSUR, EP_AGE65, EP_AGE17, EP_DISABL, EP_SNGPNT, EP_LIMENG, EP_MINRTY, EP_MUNIT, EP_MOBILE, EP_CROWD, EP_NOVEH, EP_GROUPQ, EP_NOINT, EP_AFAM, EP_HISP, EP_ASIAN, EP_AIAN, EP_NHPI, EP_TWOMORE, EP_OTHERRACE`
+
+```{python}
+dfSVI = pd.read_csv('Data/Raw/SVI.csv', dtype={'FIPS': str})
 ```
-# your code here
+
+```{python}
+# Define cols
+columnsRequired = [
+    'ST', 'STATE', 'ST_ABBR', 'STCNTY', 'COUNTY', 'FIPS', 'LOCATION', 'AREA_SQMI', 
+    'E_TOTPOP', 'EP_POV150', 'EP_UNEMP', 'EP_HBURD', 'EP_NOHSDP', 'EP_UNINSUR', 
+    'EP_AGE65', 'EP_AGE17', 'EP_DISABL', 'EP_SNGPNT', 'EP_LIMENG', 'EP_MINRTY', 
+    'EP_MUNIT', 'EP_MOBILE', 'EP_CROWD', 'EP_NOVEH', 'EP_GROUPQ', 'EP_NOINT', 
+    'EP_AFAM', 'EP_HISP', 'EP_ASIAN', 'EP_AIAN', 'EP_NHPI', 'EP_TWOMORE', 'EP_OTHERRACE']
 ```
+
 __2. Create a table / dataframe that shows the number of missing values in each column.
 (Hint: if you wrote a function for Task 1, you can reuse it here.)__
 
