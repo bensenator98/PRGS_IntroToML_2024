@@ -155,7 +155,9 @@ __3. Create a table / dataframe that shows the number of missing values in each 
 
 ```{python}
 # We show the number of missing values in each column of dfMerged.
-
+dfMergedMissing = dfMerged.isnull().sum().reset_index()
+dfMergedMissing.columns = ['Variable', 'Value']
+print(dfMergedMissing)
 ```
 
 ## Task 4 - Data Analysis
@@ -163,6 +165,18 @@ __3. Create a table / dataframe that shows the number of missing values in each 
 __1. For each numerical variable in the merged dataset, plot a histogram showing the distribution of values.
 (Hint: write a function to make the histogram for a single variable, then use a loop or apply function to make the histograms for all numerical variables.)__
 
-```
-# your code here
+```{python}
+# We'll first identify the numerical variables.
+numericalVariables = dfMerged.select_dtypes(include=['number']).columns
+# Now we'll write a function to plot a histogram for a single variable.
+import matplotlib.pyplot as plt
+def plotHistogram(df, variable):
+    plt.hist(df[variable].dropna(), bins=20)
+    plt.title(variable)
+    plt.xlabel(variable)
+    plt.ylabel('Frequency')
+    plt.show()
+# Now we can use this function to plot histograms for all numerical variables.
+for var in numericalVariables:
+    plotHistogram(dfMerged, var)
 ```
