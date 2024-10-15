@@ -88,28 +88,74 @@ columnsRequired = [
     'EP_AGE65', 'EP_AGE17', 'EP_DISABL', 'EP_SNGPNT', 'EP_LIMENG', 'EP_MINRTY', 
     'EP_MUNIT', 'EP_MOBILE', 'EP_CROWD', 'EP_NOVEH', 'EP_GROUPQ', 'EP_NOINT', 
     'EP_AFAM', 'EP_HISP', 'EP_ASIAN', 'EP_AIAN', 'EP_NHPI', 'EP_TWOMORE', 'EP_OTHERRACE']
+# Subset to these columns
+dfSVISubset = dfSVI[columnsRequired]
 ```
 
 __2. Create a table / dataframe that shows the number of missing values in each column.
 (Hint: if you wrote a function for Task 1, you can reuse it here.)__
 
-```
-# your code here
+```{python}
+# As above show number of missing values in each col
+dfSVISubsetMissing = dfSVISubset.isnull().sum().reset_index()
+dfSVISubsetMissing.columns=['Variable', 'Value']
+dfSVI
+print(dfSVISubsetMissing)
 ```
 
 ## Task 3 - Data Merging
 __1. Identify any FIPS codes that are present in the NRI data but not in the SVI data and vice versa. Describe any discrepancies and possible causes? What to these discrepancies, if any, mean for interpreting results based on the merged dataset moving forward?__
+
+```{python}
+# In NRI data, the FIPS codes are identified by variable STCOFIPS.
+# In SVI data, this variable is just FIPS.
+# First, identify FIPS codes in NRI data but not SVI.
+NRIFips = set(dfNRI['STCOFIPS'])
+SVIFips = set(dfSVISubset['FIPS'])
+# Now we find which are not in each set.
+NRIFipsNotSVI = NRIFips - SVIFips
+SVIFipsNotNRI = SVIFips - NRIFips
+# Print the results.
+print(NRIFipsNotSVI)
+print(SVIFipsNotNRI)
+print("We can see that the number of FIPS codes in the NRI data but not in the SVI data is:")
+print(len(NRIFipsNotSVI))
+print("And the number of FIPS codes in the SVI data but not in the NRI data is:")
+print(len(SVIFipsNotNRI))
+# We can investigate why these discrepancies exist.
+# First, we can check if the FIPS codes are formatted differently in the two datasets.
+print(dfNRI['STCOFIPS'].head())
+print(dfSVISubset['FIPS'].head())
+# They look to be the same. We can also check if there are any missing values in the FIPS columns.
+print(dfNRI['STCOFIPS'].isnull().sum())
+print(dfSVISubset['FIPS'].isnull().sum())
+# There are no missing values in either dataset.
+# We can see which country codes the non-overlapping FIPS codes correspond to, to check if these are non-overlapping in a way that relates to their country. Use the STATE variable for this, and only on the SVI data because we don't have the STATE variable in the NRI data.
+print(dfSVISubset[dfSVISubset['FIPS'].isin(SVIFipsNotNRI)]['STATE'])
+# Group by STATE to see if there are any patterns.
+print(dfSVISubset[dfSVISubset['FIPS'].isin(SVIFipsNotNRI)].groupby('STATE').size())
+# It's not entirely clear why we have these lack of overlaps, although we do see that Connecticut has a large number of non-overlapping FIPS codes (9). There may be some state-level problems.
 ```
-# your code here
-```
+
 __2. Merge the NRI and SVI data on the FIPS code. Use an outer join to keep all counties in the final dataset.__
+
+```{python}
+# We merge on the FIPS code.
+dfMerged = pd.merge(dfNRI, dfSVISubset, left_on='STCOFIPS', right_on='FIPS', how='outer')
+# Check the result with head.
+print(dfMerged.head())
+# We can check if this worked by checking the number of rows in the merged dataset against the number of rows in the original datasets.
+print(dfMerged.shape)
+print(dfNRI.shape)
+print(dfSVISubset.shape)
+# Looks good.
 ```
-# your code here
-```
+
 __3. Create a table / dataframe that shows the number of missing values in each column of the merged dataset.__
 
-```
-# your code here
+```{python}
+# We show the number of missing values in each column of dfMerged.
+
 ```
 
 ## Task 4 - Data Analysis
