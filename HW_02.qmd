@@ -40,60 +40,124 @@ __3. Create a table / dataframe that, for each hazard type, shows the number of 
 ```{python}
 # First reduce down to the AFREQ and RISKR cols.
 dfNRISubset = dfNRI.filter(regex='_AFREQ$|_RISKR$')
-
 # Looks good - we can calculate the number of missing rows in each col.
-vectorNFIMissing = dfNRISubset.isnull().sum()
-
-# And now create dataframe from vectorNFIMissing.
-dfMissing = vectorNFIMissing.reset_index()
-dfMissing.columns = ['Column', 'MissingCount']
-
-# Find the hazard types and put them into a new col.
-dfMissing['HazardType'] = dfMissing['Column'].str.extract(r'^(.*?)(?:_AFREQ|_RISKR)$')[0]
-
-# Group, and sum the missing counts.
-dfMissingCrossTabs = dfMissing.groupby('HazardType').sum()
-print(dfMissingCrossTabs)
+dfNRIMissing = dfNRISubset.isnull().sum()
+# Series, not a DF: convert.
+dfNRIMissing = dfNRIMissing.reset_index()
+dfNRIMissing.columns = ['Variable', 'Value']
+# Split the 'Variable' column into 'Type' and 'Measure'
+dfNRIMissing[['Type', 'Measure']] = dfNRIMissing['Variable'].str.split('_', expand=True)
+# Good - we are ready to convert to wide.
+dfNRIMissingWide = dfNRIMissing.pivot(index='Type', columns='Measure', values = 'Value').reset_index()
+# And rename for intuitive colnames.
+dfNRIMissingWide = dfNRIMissingWide.rename(columns={'Type': 'Hazard'})
+print(dfNRIMissingWide)
 ```
 
 __4. Create a new column in the original data table indicating whether or not 'AVLN_AFREQ' is missing or observed. Show the cross-tabulation of the 'AVLN_AFREQ' missingness and 'AVLN_RISKR' columns (including missing values). What do you observe?__
-```
-# your code here
-```
-__5. Assuming that a risk that is "not applicable" to a county has an annualized frequency of 0, impute the relevant missing values in the '\_AFREQ' columns with 0.__
-```
-# your code here
+```{python}
+# Let's note that we have already done the output of this in part 3, but we will also create the requested missing indicator here.
+dfNRI['AVLN_AFREQ_Missing'] = dfNRI['AVLN_AFREQ'].isnull()
+tblAVLNAFREQMissingByAVLNRISKR = pd.crosstab(dfNRI['AVLN_AFREQ_Missing'], dfNRI['AVLN_RISKR'], dropna=False)
+print(tblAVLNAFREQMissingByAVLNRISKR)
 ```
 
+We notice that the vast majority of the missing values for AVLN_AFREQ are conditional on the AVLN_RISKR variable being 'Not Applicable'.
+
+__5. Assuming that a risk that is "not applicable" to a county has an annualized frequency of 0, impute the relevant missing values in the '\_AFREQ' columns with 0.__
+
+```{python}
+dfNRI[dfNRI.columns[dfNRI.columns.str.endswith('_AFREQ')]] = dfNRI.filter(regex='_AFREQ$').fillna(0)
+```
 
 ## Task 2 - SVI Data Cleaning
 
 __1. Import the SVI data. Ensure that the FIPS code is correctly identified as a string / character variable. Otherwise, the leading zeros will be removed.__
 __1. Subset the SVI data to include only the following columns:__
 `ST, STATE, ST_ABBR, STCNTY, COUNTY, FIPS, LOCATION, AREA_SQMI, E_TOTPOP, EP_POV150, EP_UNEMP, EP_HBURD, EP_NOHSDP, EP_UNINSUR, EP_AGE65, EP_AGE17, EP_DISABL, EP_SNGPNT, EP_LIMENG, EP_MINRTY, EP_MUNIT, EP_MOBILE, EP_CROWD, EP_NOVEH, EP_GROUPQ, EP_NOINT, EP_AFAM, EP_HISP, EP_ASIAN, EP_AIAN, EP_NHPI, EP_TWOMORE, EP_OTHERRACE`
+
+```{python}
+dfSVI = pd.read_csv('Data/Raw/SVI.csv', dtype={'FIPS': str})
 ```
-# your code here
+
+```{python}
+# Define cols
+columnsRequired = [
+    'ST', 'STATE', 'ST_ABBR', 'STCNTY', 'COUNTY', 'FIPS', 'LOCATION', 'AREA_SQMI', 
+    'E_TOTPOP', 'EP_POV150', 'EP_UNEMP', 'EP_HBURD', 'EP_NOHSDP', 'EP_UNINSUR', 
+    'EP_AGE65', 'EP_AGE17', 'EP_DISABL', 'EP_SNGPNT', 'EP_LIMENG', 'EP_MINRTY', 
+    'EP_MUNIT', 'EP_MOBILE', 'EP_CROWD', 'EP_NOVEH', 'EP_GROUPQ', 'EP_NOINT', 
+    'EP_AFAM', 'EP_HISP', 'EP_ASIAN', 'EP_AIAN', 'EP_NHPI', 'EP_TWOMORE', 'EP_OTHERRACE']
+# Subset to these columns
+dfSVISubset = dfSVI[columnsRequired]
 ```
+
 __2. Create a table / dataframe that shows the number of missing values in each column.
 (Hint: if you wrote a function for Task 1, you can reuse it here.)__
 
-```
-# your code here
+```{python}
+# As above show number of missing values in each col
+dfSVISubsetMissing = dfSVISubset.isnull().sum().reset_index()
+dfSVISubsetMissing.columns=['Variable', 'Value']
+dfSVI
+print(dfSVISubsetMissing)
 ```
 
 ## Task 3 - Data Merging
 __1. Identify any FIPS codes that are present in the NRI data but not in the SVI data and vice versa. Describe any discrepancies and possible causes? What to these discrepancies, if any, mean for interpreting results based on the merged dataset moving forward?__
+
+```{python}
+# In NRI data, the FIPS codes are identified by variable STCOFIPS.
+# In SVI data, this variable is just FIPS.
+# First, identify FIPS codes in NRI data but not SVI.
+NRIFips = set(dfNRI['STCOFIPS'])
+SVIFips = set(dfSVISubset['FIPS'])
+# Now we find which are not in each set.
+NRIFipsNotSVI = NRIFips - SVIFips
+SVIFipsNotNRI = SVIFips - NRIFips
+# Print the results.
+print(NRIFipsNotSVI)
+print(SVIFipsNotNRI)
+print("We can see that the number of FIPS codes in the NRI data but not in the SVI data is:")
+print(len(NRIFipsNotSVI))
+print("And the number of FIPS codes in the SVI data but not in the NRI data is:")
+print(len(SVIFipsNotNRI))
+# We can investigate why these discrepancies exist.
+# First, we can check if the FIPS codes are formatted differently in the two datasets.
+print(dfNRI['STCOFIPS'].head())
+print(dfSVISubset['FIPS'].head())
+# They look to be the same. We can also check if there are any missing values in the FIPS columns.
+print(dfNRI['STCOFIPS'].isnull().sum())
+print(dfSVISubset['FIPS'].isnull().sum())
+# There are no missing values in either dataset.
+# We can see which country codes the non-overlapping FIPS codes correspond to, to check if these are non-overlapping in a way that relates to their country. Use the STATE variable for this, and only on the SVI data because we don't have the STATE variable in the NRI data.
+print(dfSVISubset[dfSVISubset['FIPS'].isin(SVIFipsNotNRI)]['STATE'])
+# Group by STATE to see if there are any patterns.
+print(dfSVISubset[dfSVISubset['FIPS'].isin(SVIFipsNotNRI)].groupby('STATE').size())
+# It's not entirely clear why we have these lack of overlaps, although we do see that Connecticut has a large number of non-overlapping FIPS codes (9). There may be some state-level problems.
 ```
-# your code here
-```
+
 __2. Merge the NRI and SVI data on the FIPS code. Use an outer join to keep all counties in the final dataset.__
+
+```{python}
+# We merge on the FIPS code.
+dfMerged = pd.merge(dfNRI, dfSVISubset, left_on='STCOFIPS', right_on='FIPS', how='outer')
+# Check the result with head.
+print(dfMerged.head())
+# We can check if this worked by checking the number of rows in the merged dataset against the number of rows in the original datasets.
+print(dfMerged.shape)
+print(dfNRI.shape)
+print(dfSVISubset.shape)
+# Looks good.
 ```
-# your code here
-```
+
 __3. Create a table / dataframe that shows the number of missing values in each column of the merged dataset.__
 
-```
-# your code here
+```{python}
+# We show the number of missing values in each column of dfMerged.
+dfMergedMissing = dfMerged.isnull().sum().reset_index()
+dfMergedMissing.columns = ['Variable', 'Value']
+print(dfMergedMissing)
 ```
 
 ## Task 4 - Data Analysis
@@ -101,6 +165,18 @@ __3. Create a table / dataframe that shows the number of missing values in each 
 __1. For each numerical variable in the merged dataset, plot a histogram showing the distribution of values.
 (Hint: write a function to make the histogram for a single variable, then use a loop or apply function to make the histograms for all numerical variables.)__
 
-```
-# your code here
+```{python}
+# We'll first identify the numerical variables.
+numericalVariables = dfMerged.select_dtypes(include=['number']).columns
+# Now we'll write a function to plot a histogram for a single variable.
+import matplotlib.pyplot as plt
+def plotHistogram(df, variable):
+    plt.hist(df[variable].dropna(), bins=20)
+    plt.title(variable)
+    plt.xlabel(variable)
+    plt.ylabel('Frequency')
+    plt.show()
+# Now we can use this function to plot histograms for all numerical variables.
+for var in numericalVariables:
+    plotHistogram(dfMerged, var)
 ```
