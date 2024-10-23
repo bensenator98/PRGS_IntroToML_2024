@@ -1,6 +1,8 @@
 \documentclass[11pt]{article}
 \usepackage{amsmath}
+\usepackage{placeins}
 \usepackage{graphicx}
+\usepackage{float}
 \title{Introduction to Machine Learning}
 \author{Your Name}
 \date{2024}
@@ -9,7 +11,7 @@
 
 \maketitle
 
-\section{Lecture 4: Unsupervised Learning}
+\section{Lecture 4: Carter: Unsupervised Learning}
 
 \subsection{Principal Component Analysis (PCA)}
 
@@ -46,7 +48,7 @@ The rotated data primarily vary along the x-axis, and so we can be in a position
 A starting workflow is shown in Figure \ref{fig:PCA_Image1}; a next step from this would be to plot the principal components pairwise, looking for 'gaps' in the pairwise (correlation) plots.
 Similarly to EFA, we can use the scree plot, or a cumulative variance plot, to determine the number of components to keep.
 
-\begin{figure}[ht]
+\begin{figure}[htbp]
     \centering
     \caption{Visualization of PCA workflow.}
     \label{fig:PCA_Image1}
@@ -70,5 +72,9 @@ The measure of 'similarity' drives the approach taken and results. Some common m
 We also have probabilistic and information theoretic measures.
 
 \subsection{Evaluating Unsupervised Learning Approaches}
+
+\FloatBarrier
+\newpage
+\section{Hassler Lectures}
 
 \end{document}
